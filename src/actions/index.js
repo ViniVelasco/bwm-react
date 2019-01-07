@@ -2,7 +2,7 @@ import axios from 'axios';
 import authService from 'services/auth-service';
 import axiosService from 'services/axios-service';
 
-import { FECTH_RENTAL_SUCCESS, FETCH_RENTAL_BY_ID_SUCCESS, FETCH_RENTAL_BY_ID_INIT, LOGIN_SUCCESS, LOGIN_FAILURE, LOGOUT } from './types';
+import { FECTH_RENTAL_SUCCESS, FETCH_RENTAL_BY_ID_SUCCESS, FETCH_RENTAL_BY_ID_INIT, LOGIN_SUCCESS, LOGIN_FAILURE, FECTH_RENTALS_INIT, FECTH_RENTALS_FAIL, LOGOUT } from './types';
 
 const axiosInstance = axiosService.getInstance();
 
@@ -26,15 +26,31 @@ const fecthRentalsSuccess = (rentals) => {
   }
 }
 
-export const fetchRentals = () => {
-  return dispatch => {
-    axiosInstance.get('/rentals')
-    .then(res =>  res.data)
-    .then(rentals => dispatch(fecthRentalsSuccess(rentals))
-    );
+const fetchRentalsInit = () => {
+  return {
+    type: FECTH_RENTALS_INIT
   }
+}
 
+const fetchRentalsFail = (errors) => {
+  return {
+    type: FECTH_RENTALS_FAIL,
+    errors
+  }
 };
+
+export const fetchRentals = (city) => {
+  const url = city ? `/rentals?city=${city}` : '/rentals';
+
+  return dispatch => {
+    dispatch(fetchRentalsInit());
+
+    axiosInstance.get(url)
+      .then(res => res.data )
+      .then(rentals => dispatch(fecthRentalsSuccess(rentals)))
+      .catch(({response}) => dispatch(fetchRentalsFail(response.data.errors)))
+  }
+}
 
 export const fetchRentalById = (rentalId) => {
   return function(dispatch) {
@@ -47,8 +63,13 @@ export const fetchRentalById = (rentalId) => {
   }
 }
 
-// AUTH ACTIONS
+export const createRental = (rentalData) => {
+  return axiosInstance.post('/rentals', rentalData).then(
+    res => res.data,
+    err => Promise.reject(err.response.data.errors));
+}
 
+// AUTH ACTIONS
 export const register = (userData) => {
   return axios.post('/api/v1/users/register', userData).then(
     res => res.data,
@@ -56,9 +77,11 @@ export const register = (userData) => {
 }
 
 const loginSuccess = (token) => {
+  const username = authService.getUsername();
   return {
     type: LOGIN_SUCCESS,
-    token
+    token,
+    username
   }
 }
 
