@@ -4,7 +4,7 @@ import { RentalDetailInfo } from './RentalDetailInfo';
 import { RentalMap } from './RentalMap';
 
 import * as actions from 'actions';
-import { Booking } from '../../booking/Booking';
+import Booking from '../../booking/Booking';
 
 class RentalDetail extends React.Component {
 
